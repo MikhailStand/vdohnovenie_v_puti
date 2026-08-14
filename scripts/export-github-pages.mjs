@@ -26,13 +26,25 @@ if (!response.ok) {
   throw new Error(`Не удалось создать index.html: ${response.status}`);
 }
 
-const withBasePath = (text) =>
-  text
-    .replaceAll('"/_next/', '"/vdohnovenie_v_puti/_next/')
-    .replaceAll("'/_next/", "'/vdohnovenie_v_puti/_next/")
-    .replaceAll("`/_next/", "`/vdohnovenie_v_puti/_next/")
-    .replaceAll('href="/favicon.svg"', 'href="/vdohnovenie_v_puti/favicon.svg"')
-    .replaceAll('content="/og-v21.png"', 'content="/vdohnovenie_v_puti/og-v21.png"');
+const githubPagesBasePath =
+  process.env.GITHUB_PAGES === "true" ? "/vdohnovenie_v_puti" : "";
+
+const withBasePath = (text) => {
+  if (!githubPagesBasePath) return text;
+
+  return text
+    .replaceAll('"/_next/', `"${githubPagesBasePath}/_next/`)
+    .replaceAll("'/_next/", `'${githubPagesBasePath}/_next/`)
+    .replaceAll("`/_next/", `\`${githubPagesBasePath}/_next/`)
+    .replaceAll(
+      'href="/favicon.svg"',
+      `href="${githubPagesBasePath}/favicon.svg"`,
+    )
+    .replaceAll(
+      'content="/og-v21.png"',
+      `content="${githubPagesBasePath}/og-v21.png"`,
+    );
+};
 
 await writeFile(
   new URL("index.html", outputDirectory),
