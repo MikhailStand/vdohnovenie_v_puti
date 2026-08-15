@@ -1,4 +1,4 @@
-import { readFile, readdir, writeFile } from "node:fs/promises";
+import { cp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -68,3 +68,9 @@ async function patchClientAssets(directory) {
 
 await patchClientAssets(fileURLToPath(new URL("_next/", outputDirectory)));
 await writeFile(new URL(".nojekyll", outputDirectory), "", "utf8");
+
+if (!githubPagesBasePath) {
+  const timewebOutputDirectory = new URL("../out/", import.meta.url);
+  await rm(timewebOutputDirectory, { recursive: true, force: true });
+  await cp(outputDirectory, timewebOutputDirectory, { recursive: true });
+}
