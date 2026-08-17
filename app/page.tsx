@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { defaultContent, defaultSettings, type ContentItem } from "../lib/default-content";
 
+/*
 const directions = [
   {
     number: "01",
@@ -145,9 +147,23 @@ const massages = [
     image: "https://images.pexels.com/photos/19695942/pexels-photo-19695942.jpeg?auto=compress&cs=tinysrgb&w=1100",
   },
 ];
+*/
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [content, setContent] = useState<ContentItem[]>(defaultContent);
+  const [settings, setSettings] = useState(defaultSettings);
+  useEffect(() => {
+    fetch("/api/content").then((response) => response.ok ? response.json() : null).then((data) => {
+      if (data?.items?.length) setContent(data.items.filter((item: ContentItem) => item.isVisible));
+      if (data?.settings) setSettings((current) => ({ ...current, ...data.settings }));
+    }).catch(() => undefined);
+  }, []);
+  const directions = content.filter((item) => item.section === "directions").map((item) => ({ ...item, text: item.description, group: item.groupSize, image: item.imageUrl }));
+  const massages = content.filter((item) => item.section === "massages").map((item) => ({ ...item, text: item.description, image: item.imageUrl }));
+  const classPrices = content.filter((item) => item.section === "class_prices");
+  const massagePrices = content.filter((item) => item.section === "massage_prices");
+  const memberships = content.filter((item) => item.section === "memberships");
   const closeMenu = () => setMenuOpen(false);
 
   return (
@@ -197,9 +213,9 @@ export default function Home() {
         <div className="hero-shade" />
         <div className="hero-copy">
           <p className="eyebrow"><span /> Студия йоги в Королёве</p>
-          <h1>Йога и движение<br /><em>для вашего тела</em></h1>
+          <h1>{settings.heroTitle}<br /><em>{settings.heroAccent}</em></h1>
           <div className="hero-bottom">
-            <p>Выберите подходящее занятие, узнайте стоимость и запишитесь в студию в Королёве.</p>
+            <p>{settings.heroText}</p>
             <nav className="hero-quick-links" aria-label="Быстрые переходы по сайту">
               <a href="#directions">Занятия</a>
               <a href="#massages">Массаж</a>
@@ -208,7 +224,7 @@ export default function Home() {
             </nav>
           </div>
         </div>
-        <div className="hero-info"><span>Дворцовый проезд, 8/14</span><span>Ежедневно · 07:00—22:00</span></div>
+        <div className="hero-info"><span>{settings.address}</span><span>{settings.hours}</span></div>
       </section>
 
       <section className="directions section" id="directions">
@@ -250,8 +266,7 @@ export default function Home() {
           <div><h2>Сколько стоят<br /><em>занятия</em></h2></div>
         </div>
         <div className="price-strip">
-          <article className="price-main"><div><span className="price-kicker">Любое групповое занятие</span><h3>Разовое посещение</h3><p>Хатха-йога, аэройога, пилатес, стретчинг, здоровая спина и другие групповые направления.</p></div><strong>550 <small>₽</small></strong></article>
-          <article><span className="price-kicker">Персонально</span><h3>Индивидуальное занятие</h3><p>Точная стоимость зависит от выбранного направления.</p><strong>до 1 100 <small>₽</small></strong></article>
+          {classPrices.map((item, index) => <article className={index === 0 ? "price-main" : ""} key={item.id}><div><span className="price-kicker">{item.label}</span><h3>{item.title}</h3><p>{item.description}</p></div><strong>{item.price}</strong></article>)}
           <article className="price-help"><span className="price-kicker">Помощь с выбором</span><h3>Уточнить направление</h3><p>Администратор подскажет подходящий формат и наличие места.</p><a className="price-phone-link" href="tel:+79309098882">Позвонить администратору <span className="link-arrow" aria-hidden="true">→</span></a></article>
         </div>
       </section>
@@ -283,16 +298,12 @@ export default function Home() {
           <div><h2>Стоимость<br /><em>массажа</em></h2></div>
         </div>
         <div className="price-strip massage-price-strip">
-          <article><span className="price-kicker">Короткий сеанс</span><h3>30 минут</h3><p>Для воротниковой зоны, спины или стоп.</p><strong>от 1 200 <small>₽</small></strong></article>
-          <article className="price-main"><div><span className="price-kicker">Основной формат</span><h3>60 минут</h3><p>Общий спортивный, relax-массаж и другие программы.</p></div><strong>от 2 000 <small>₽</small></strong></article>
-          <article><span className="price-kicker">Глубокое расслабление</span><h3>90 минут</h3><p>Продолжительный сеанс, включая тайский массаж.</p><strong>от 2 800 <small>₽</small></strong></article>
+          {massagePrices.map((item, index) => <article className={index === 1 ? "price-main" : ""} key={item.id}><div><span className="price-kicker">{item.label}</span><h3>{item.title}</h3><p>{item.description}</p></div><strong>{item.price}</strong></article>)}
         </div>
 
         <div className="membership-head" id="offers"><div><span>Специальные предложения</span><h3>Абонементы на месяц</h3></div></div>
         <div className="membership-grid">
-          <article><span>Лёгкий старт</span><h3>8 занятий</h3><strong>7 200 ₽</strong><p>900 ₽ за одно посещение</p></article>
-          <article className="popular"><span>В ритме</span><h3>12 занятий</h3><strong>9 900 ₽</strong><p>825 ₽ за одно посещение</p></article>
-          <article><span>Регулярная практика</span><h3>16 занятий</h3><strong>12 400 ₽</strong><p>775 ₽ за одно посещение</p></article>
+          {memberships.map((item, index) => <article className={index === 1 ? "popular" : ""} key={item.id}><span>{item.label}</span><h3>{item.title}</h3><strong>{item.price}</strong><p>{item.description}</p></article>)}
         </div>
         <div className="gift-banner"><div><span>Подарок с заботой</span><h3>Подарочный сертификат</h3><p>На занятие, абонемент или массаж — сумма и оформление по согласованию со студией.</p></div><a href="tel:+79309098882">Уточнить <span className="link-arrow" aria-hidden="true">→</span></a></div>
       </section>
@@ -300,8 +311,8 @@ export default function Home() {
       <section className="studio-story" id="about">
         <div className="story-photo" role="img" aria-label="Светлое спокойное пространство для занятий йогой" />
         <div className="story-copy">
-          <h2>Студия для начинающих<br />и опытных учеников</h2>
-          <p className="story-lead">В «Вдохновении в пути» можно заниматься йогой, пилатесом, фитнесом и растяжкой, попробовать практики в гамаках или записаться на массаж.</p>
+          <h2>{settings.aboutTitle}</h2>
+          <p className="story-lead">{settings.aboutText}</p>
           <p>Если вы не знаете, что выбрать, администратор поможет подобрать занятие по цели, уровню подготовки и удобному формату.</p>
         </div>
       </section>
@@ -318,9 +329,9 @@ export default function Home() {
         </div>
         <div className="booking-phone-card">
           <span>Администратор студии</span>
-          <a href="tel:+79309098882">+7 930 909-88-82</a>
-          <p>Ежедневно · 07:00—22:00</p>
-          <a className="call-button" href="tel:+79309098882">Позвонить администратору <span className="link-arrow" aria-hidden="true">→</span></a>
+          <a href={`tel:${settings.phoneHref}`}>{settings.phone}</a>
+          <p>{settings.hours}</p>
+          <a className="call-button" href={`tel:${settings.phoneHref}`}>Позвонить администратору <span className="link-arrow" aria-hidden="true">→</span></a>
         </div>
       </section>
 
